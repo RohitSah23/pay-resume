@@ -1,0 +1,45 @@
+export const REQUIRED_SECTIONS = [
+  "Skills",
+  "Experience",
+  "Education",
+  "Projects",
+] as const;
+
+export const KEYWORDS = [
+  "javascript",
+  "typescript",
+  "react",
+  "next.js",
+  "node.js",
+  "html",
+  "css",
+  "redux",
+  "graphql",
+  "rest api",
+  "sql",
+  "nosql",
+  "git",
+  "agile",
+  "scrum",
+  "testing",
+  "ci/cd",
+  "docker",
+  "aws",
+  "communication",
+  "teamwork",
+  "problem solving",
+  "leadership",
+  "management",
+  "analysis",
+  "design",
+  "development",
+  "engineering",
+  "project management",
+];
+
+export const SECTION_KEYWORDS: Record<string, string[]> = {
+  Skills: ["skills", "technical skills", "competencies", "core competencies", "technologies"],
+  Experience: ["experience", "work experience", "employment", "work history", "professional experience"],
+  Education: ["education", "academics", "qualifications", "academic background", "degrees"],
+  Projects: ["projects", "personal projects", "academic projects", "key projects"],
+};
