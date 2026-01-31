@@ -6,13 +6,16 @@ import { setAnalyzing, setResumeData, setAnalysisResult, setParseError } from '@
 import { analyzeResume } from '@/lib/ats/scorer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { UploadCloud, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { UploadCloud, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export default function ResumeUpload() {
   const dispatch = useAppDispatch();
-  const { isAnalyzing, parseError, fileName } = useAppSelector((state) => state.resume);
+  const { isAnalyzing, parseError } = useAppSelector((state) => state.resume);
   const [dragActive, setDragActive] = useState(false);
+  const [useAI, setUseAI] = useState(true);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -40,26 +43,44 @@ export default function ResumeUpload() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/parse-resume', {
+      // 1. Extract Text
+      const parseResponse = await fetch('/api/parse-resume', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
+      if (!parseResponse.ok) {
         throw new Error('Failed to parse resume');
       }
 
-      const data = await response.json();
+      const parseData = await parseResponse.json();
       
-      if (data.error) {
-        throw new Error(data.error);
+      if (parseData.error) {
+        throw new Error(parseData.error);
       }
 
-      dispatch(setResumeData({ fileName: file.name, text: data.text }));
+      dispatch(setResumeData({ fileName: file.name, text: parseData.text }));
       
-      // Perform ATS Analysis Client-Side (Rule-Based)
-      const results = analyzeResume(data.text);
-      dispatch(setAnalysisResult(results));
+      // 2. Analyze
+      if (useAI) {
+        const aiResponse = await fetch('/api/analyze-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: parseData.text }),
+        });
+
+        if (!aiResponse.ok) {
+          const err = await aiResponse.json();
+          throw new Error(err.error || 'AI Analysis failed');
+        }
+
+        const aiResult = await aiResponse.json();
+        dispatch(setAnalysisResult(aiResult));
+      } else {
+        // Fallback to Rule-Based
+        const results = analyzeResume(parseData.text);
+        dispatch(setAnalysisResult(results));
+      }
 
     } catch (error: any) {
       dispatch(setParseError(error.message || 'An error occurred during analysis.'));
@@ -83,8 +104,24 @@ export default function ResumeUpload() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8">
-      <Card className={`border-2 border-dashed transition-all duration-300 ${
+    <div className="w-full max-w-2xl mx-auto mb-8 space-y-4">
+      <div className="flex items-center justify-end space-x-2 mr-2">
+        <Sparkles className={`h-4 w-4 ${useAI ? 'text-purple-500' : 'text-muted-foreground'}`} />
+        <Label htmlFor="ai-toggle" className="text-sm font-medium">AI Analysis (Gemini)</Label>
+        <Switch
+          id="ai-toggle"
+          checked={useAI}
+          onCheckedChange={setUseAI}
+          disabled={isAnalyzing}
+        />
+      </div>
+
+      <Card 
+        onDragEnter={handleDrag}
+        onDragOver={handleDrag}
+        onDragLeave={handleDrag}
+        onDrop={handleDrop}
+        className={`border-2 border-dashed transition-all duration-300 ${
         dragActive ? 'border-primary bg-primary/5' : 'border-border'
       } ${isAnalyzing ? 'opacity-80 pointer-events-none' : ''}`}>
         <CardContent className="flex flex-col items-center justify-center p-10 text-center space-y-4">
