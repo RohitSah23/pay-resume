@@ -4,15 +4,13 @@ import { useCallback, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { setAnalyzing, setResumeData, setAnalysisResult, setParseError } from '@/lib/store/resumeSlice';
 import { analyzeResume } from '@/lib/ats/scorer';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { UploadCloud, FileText, AlertCircle, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { UploadCloud, AlertCircle, Loader2, Sparkles, Zap } from 'lucide-react';
 
 export default function ResumeUpload() {
   const dispatch = useAppDispatch();
-  const { isAnalyzing, parseError, fileName } = useAppSelector((state) => state.resume);
+  const { isAnalyzing, parseError } = useAppSelector((state) => state.resume);
   const [dragActive, setDragActive] = useState(false);
+  const [useAI, setUseAI] = useState(true);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -35,31 +33,49 @@ export default function ResumeUpload() {
     }
 
     dispatch(setAnalyzing(true));
+    dispatch(setParseError(''));
     
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/parse-resume', {
+      // 1. Extract Text
+      const parseResponse = await fetch('/api/parse-resume', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
+      if (!parseResponse.ok) {
         throw new Error('Failed to parse resume');
       }
 
-      const data = await response.json();
+      const parseData = await parseResponse.json();
       
-      if (data.error) {
-        throw new Error(data.error);
+      if (parseData.error) {
+        throw new Error(parseData.error);
       }
 
-      dispatch(setResumeData({ fileName: file.name, text: data.text }));
+      dispatch(setResumeData({ fileName: file.name, text: parseData.text }));
       
-      // Perform ATS Analysis Client-Side (Rule-Based)
-      const results = analyzeResume(data.text);
-      dispatch(setAnalysisResult(results));
+      // 2. Analyze
+      if (useAI) {
+        const aiResponse = await fetch('/api/analyze-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: parseData.text }),
+        });
+
+        if (!aiResponse.ok) {
+          const err = await aiResponse.json();
+          throw new Error(err.error || 'AI Analysis failed');
+        }
+
+        const aiResult = await aiResponse.json();
+        dispatch(setAnalysisResult(aiResult));
+      } else {
+        const results = analyzeResume(parseData.text);
+        dispatch(setAnalysisResult(results));
+      }
 
     } catch (error: any) {
       dispatch(setParseError(error.message || 'An error occurred during analysis.'));
@@ -83,53 +99,85 @@ export default function ResumeUpload() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8">
-      <Card className={`border-2 border-dashed transition-all duration-300 ${
-        dragActive ? 'border-primary bg-primary/5' : 'border-border'
-      } ${isAnalyzing ? 'opacity-80 pointer-events-none' : ''}`}>
-        <CardContent className="flex flex-col items-center justify-center p-10 text-center space-y-4">
-          <input
-            id="file-upload"
-            type="file"
+    <div className="w-full max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center justify-center gap-6 mb-4">
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <input 
+            type="checkbox" 
+            checked={useAI} 
+            onChange={(e) => setUseAI(e.target.checked)} 
             className="hidden"
-            accept=".pdf,.docx"
-            onChange={handleChange}
-            disabled={isAnalyzing}
           />
-          
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-2">
+          <div className={`w-10 h-10 border flex items-center justify-center transition-all ${useAI ? 'bg-primary border-primary text-black' : 'border-primary/20 text-primary/20 hover:border-primary/50'}`}>
+            <Sparkles size={20} />
+          </div>
+          <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${useAI ? 'text-white' : 'text-gray-600'}`}>
+            AI Analysis Powered
+          </span>
+        </label>
+      </div>
+
+      <div 
+        onDragEnter={handleDrag}
+        onDragOver={handleDrag}
+        onDragLeave={handleDrag}
+        onDrop={handleDrop}
+        className={`neo-card transition-all duration-500 min-h-[300px] flex items-center justify-center border-2 border-dashed ${
+          dragActive ? 'border-primary scale-[1.01] bg-primary/5' : 'border-primary/10'
+        } ${isAnalyzing ? 'opacity-80 pointer-events-none' : ''}`}
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-primary/10">
+          {isAnalyzing && <div className="h-full bg-primary animate-[shimmer_2s_infinite] w-[30%]" />}
+        </div>
+
+        <input
+          id="file-upload"
+          type="file"
+          className="hidden"
+          accept=".pdf,.docx"
+          onChange={handleChange}
+          disabled={isAnalyzing}
+        />
+        
+        <div className="flex flex-col items-center gap-6 p-8 relative z-10 text-center">
+          <div className={`w-20 h-20 flex items-center justify-center border border-primary/20 relative group-hover:border-primary/50 transition-colors`}>
             {isAnalyzing ? (
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-10 w-10 text-primary animate-spin" />
             ) : (
-              <UploadCloud className="h-8 w-8" />
+              <>
+                <UploadCloud className="h-10 w-10 text-primary group-hover:scale-110 transition-transform" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary" />
+                <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-primary" />
+              </>
             )}
           </div>
 
-          <div className="space-y-2">
-            <h3 className="text-xl font-semibold tracking-tight">
-              {isAnalyzing ? 'Analyzing Resume...' : 'Upload your Resume'}
+          <div className="space-y-4">
+            <h3 className={`text-2xl font-black uppercase tracking-tighter italic ${isAnalyzing ? 'animate-glitch' : ''}`}>
+              {isAnalyzing ? <span className="spotlight-text">Scanning Pulse...</span> : 'Upload Repository'}
             </h3>
-            <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-              Drag & drop your PDF or DOCX file here, or click to browse.
+            <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.3em] max-w-xs mx-auto leading-loose">
+              PDF / DOCX Format Supported. Systemic Extraction Enabled.
             </p>
           </div>
 
           {!isAnalyzing && (
-            <Button asChild variant="outline" className="mt-4">
-              <label htmlFor="file-upload" className="cursor-pointer">
-                Select File
-              </label>
-            </Button>
+            <label htmlFor="file-upload" className="neo-button cursor-pointer">
+               Initialize Scan <Zap size={16} fill="currentColor" />
+            </label>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Decorative elements */}
+        <div className="absolute top-4 left-4 text-[8px] font-mono text-gray-700 uppercase">SYS_UPLOAD_V2.0.26</div>
+        <div className="absolute bottom-4 right-4 text-[8px] font-mono text-gray-700 uppercase">ENCRYPTED_TRANSFER</div>
+      </div>
 
       {parseError && (
-        <Alert variant="destructive" className="mt-4 animate-in fade-in slide-in-from-top-2">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{parseError}</AlertDescription>
-        </Alert>
+        <div className="bg-red-500/10 border border-red-500/20 p-4 flex gap-4 items-center animate-in fade-in slide-in-from-top-4">
+           <AlertCircle className="text-red-500 shrink-0" />
+           <div className="text-xs font-bold uppercase tracking-widest text-red-500">{parseError}</div>
+        </div>
       )}
     </div>
   );
