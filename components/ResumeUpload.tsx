@@ -33,7 +33,7 @@ export default function ResumeUpload() {
     }
 
     dispatch(setAnalyzing(true));
-    dispatch(setParseError(null));
+    dispatch(setParseError(''));
     
     try {
       const formData = new FormData();

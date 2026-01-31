@@ -13,18 +13,20 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white selection:bg-primary selection:text-black">
       {/* Navigation Placeholder */}
-      <nav className="border-b border-primary/10 py-6 px-8 flex justify-between items-center bg-black/50 backdrop-blur-xl sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rotate-45 flex items-center justify-center">
-            <div className="w-4 h-4 bg-black -rotate-45" />
+      <nav className="border-b border-primary/10 py-6 px-8 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary rotate-45 flex items-center justify-center">
+              <div className="w-4 h-4 bg-black -rotate-45" />
+            </div>
+            <span className="font-black tracking-tighter text-xl italic pt-1">PAY-RESUME</span>
           </div>
-          <span className="font-black tracking-tighter text-xl italic pt-1">PAY-RESUME</span>
-        </div>
-        <div className="hidden md:flex gap-8 items-center text-xs font-bold tracking-widest uppercase">
-          <a href="#" className="hover:text-primary transition-colors">Analyzer</a>
-          <a href="#" className="hover:text-primary transition-colors">Features</a>
-          <a href="#" className="hover:text-primary transition-colors">Pricing</a>
-          <button className="neo-button scale-75 origin-right">Contact</button>
+          <div className="hidden md:flex gap-8 items-center text-xs font-bold tracking-widest uppercase">
+            <a href="#" className="hover:text-primary transition-colors">Analyzer</a>
+            <a href="#" className="hover:text-primary transition-colors">Features</a>
+            <a href="#" className="hover:text-primary transition-colors">Pricing</a>
+            <button className="neo-button scale-75 origin-right">Contact</button>
+          </div>
         </div>
       </nav>
 
