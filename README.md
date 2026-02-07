@@ -75,20 +75,3 @@ All rules are deterministic and transparent.
 
 ---
 
-## 📁 Project Structure (Example)
-
-```txt
-src/
-├── components/
-│   ├── UploadResume.tsx
-│   ├── ResumePreview.tsx
-│   ├── AtsScore.tsx
-│   └── FeedbackPanel.tsx
-├── utils/
-│   ├── parseResume.ts
-│   ├── detectSections.ts
-│   ├── atsRules.ts
-│   └── keywords.ts
-├── pages/
-│   └── index.tsx
-└── styles/
