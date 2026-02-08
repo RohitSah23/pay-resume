@@ -126,7 +126,7 @@ export default function ResumeUpload() {
           dragActive ? 'border-primary scale-[1.01] bg-primary/5' : 'border-primary/10'
         } ${isAnalyzing ? 'opacity-80 pointer-events-none' : ''}`}
       >
-        <div className="absolute top-0 left-0 w-full h-1 bg-primary/10">
+        <div className="absolute top-0 left-0 w-full h-1 bg-primary/10 overflow-hidden">
           {isAnalyzing && <div className="h-full bg-primary animate-[shimmer_2s_infinite] w-[30%]" />}
         </div>
 
@@ -139,10 +139,13 @@ export default function ResumeUpload() {
           disabled={isAnalyzing}
         />
         
-        <div className="flex flex-col items-center gap-6 p-8 relative z-10 text-center">
-          <div className={`w-20 h-20 flex items-center justify-center border border-primary/20 relative group-hover:border-primary/50 transition-colors`}>
+        <div className={`flex flex-col items-center gap-6 p-8 relative z-10 text-center transition-all duration-500 ${isAnalyzing ? 'scale-110' : ''}`}>
+          <div className={`w-20 h-20 flex items-center justify-center border border-primary/20 relative group-hover:border-primary/50 transition-colors ${isAnalyzing ? 'border-primary shadow-[0_0_30px_rgba(212,255,0,0.2)]' : ''}`}>
             {isAnalyzing ? (
-              <Loader2 className="h-10 w-10 text-primary animate-spin" />
+              <div className="relative">
+                <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                <div className="absolute inset-0 bg-primary/20 blur-xl animate-pulse" />
+              </div>
             ) : (
               <>
                 <UploadCloud className="h-10 w-10 text-primary group-hover:scale-110 transition-transform" />
@@ -153,11 +156,11 @@ export default function ResumeUpload() {
           </div>
 
           <div className="space-y-4">
-            <h3 className={`text-2xl font-black uppercase tracking-tighter italic ${isAnalyzing ? 'animate-glitch' : ''}`}>
-              {isAnalyzing ? <span className="spotlight-text">Scanning Pulse...</span> : 'Upload Repository'}
+            <h3 className={`text-2xl font-black uppercase tracking-tighter italic ${isAnalyzing ? 'animate-glitch spotlight-text' : ''}`}>
+              {isAnalyzing ? 'Scanning Pulse...' : 'Upload Repository'}
             </h3>
             <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.3em] max-w-xs mx-auto leading-loose">
-              PDF / DOCX Format Supported. Systemic Extraction Enabled.
+              {isAnalyzing ? 'Extracting semantic layers and verifying integrity' : 'PDF / DOCX Format Supported. Systemic Extraction Enabled.'}
             </p>
           </div>
 
